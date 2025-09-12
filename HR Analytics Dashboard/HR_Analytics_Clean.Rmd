@@ -1,0 +1,59 @@
+---
+title: "HR_Analytics_Clean"
+author: "Charmaine Gan"
+date: "2025-09-05"
+output: html_document
+---
+
+```{r}
+hr <- read.csv("C:/Users/User/Downloads/HR_Analytics.csv", header=T)
+str(hr)
+
+```
+
+```{r}
+
+which(duplicated(hr))
+
+```
+```{r}
+
+hr <- hr[!duplicated(hr), ]
+
+
+which(duplicated(hr))
+
+
+```
+
+
+
+```{r}
+
+colSums(is.na(hr))
+
+```
+Only 57 missing values out of 1480 observations in the column 'YearsWithCurrManager'. Therefore, we proceed with removing observations with these missing values.
+
+
+```{r}
+hr_clean <- na.omit(hr)
+str(hr_clean)
+
+colSums(is.na(hr_clean))
+```
+
+```{r}
+
+write.csv(hr_clean, file = "C:/Users/User/Downloads/hr_analytics_clean.csv" )
+
+```
+
+# Key Insights from Dashboard 
+
+## 
+
+
+
+
+
