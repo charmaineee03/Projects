@@ -1,4 +1,4 @@
-* Predicting Credit Card Approval With Using Python
+# Predicting Credit Card Approval With Using Python
 
 This machine learning project mainly focuses on predicting one's approval for a credit card application based on their demmographics and financial status. 
 ---
