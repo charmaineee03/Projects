@@ -5,9 +5,9 @@
 This project aims to analyse and explore both supervised and unsupervised machine learning methods to classify tumours: Malignant (M) or Benign (B) using the **Breast Cancer Winconsin dataset**. 
 
 This project strives to: 
-- Address multicollinearity using Principal Component Analysis (PCA)
-- Apply K-Means clustering on the PCA-reduced data and evaluate cluster quality.
-- Build and compare Support Vector Machine models using both original features and PCA-reduced features. 
+- Address multicollinearity using Principal Component Analysis (PCA) using R. 
+- Apply K-Means clustering on the PCA-reduced data and evaluate cluster quality in R.
+- Build and compare Support Vector Machine models using both original features and PCA-reduced features by utilising Python. 
 
 ---
 
