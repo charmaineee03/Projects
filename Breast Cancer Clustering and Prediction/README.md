@@ -1,4 +1,4 @@
-# Breast Cancer: Clustering and Prediction 
+# Breast Cancer: Clustering and Prediction (Malignant vs. Benign)
 
 ---
 ## Project Overview 
