@@ -1,0 +1,198 @@
+---
+title: "Breast Cancer Clustering"
+author: "Charmaine Gan"
+date: "2025-09-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+if(!require(pacman)) install.packages("pacman")
+pacman::p_load(dplyr,
+               ggplot2,
+               factoextra,
+               dbscan,
+               cluster)
+
+```
+
+```{r}
+breast_cancer<- read.csv("C:/Users/User/Downloads/data.csv", header= T)
+str(breast_cancer)
+```
+
+## Data Cleaning 
+
+```{r}
+#Renaming variables 
+names(breast_cancer) <- c(
+  "id", "diagnosis",
+  "rad_m", "tex_m", "per_m", "area_m", "smooth_m", "comp_m", "concv_m", "concp_m", "sym_m", "frac_m",
+  "rad_se", "tex_se", "per_se", "area_se", "smooth_se", "comp_se", "concv_se", "concp_se", "sym_se", "frac_se",
+  "rad_w", "tex_w", "per_w", "area_w", "smooth_w", "comp_w", "concv_w", "concp_w", "sym_w", "frac_w"
+)
+
+
+
+#Check for duplicates 
+which(duplicated(breast_cancer))
+
+# Check for missing vaues 
+colSums(is.na(breast_cancer))
+
+# Encoding categorical variables 
+
+breast_cancer_clean <- breast_cancer %>% 
+  mutate( diagnosis = as.factor(diagnosis)) 
+
+
+str(breast_cancer_clean)
+
+```
+
+## Summary Statistics 
+
+```{r}
+
+summary(breast_cancer)
+
+```
+
+## EDA (Correlation Heatmap)
+```{r fig.width=12, fig.height=12}
+num_var<- breast_cancer_clean[,-c(1:2)] %>% 
+  scale()
+str(num_var)
+
+cor_m<-cor(num_var, use = "complete.obs")
+corrplot::corrplot((cor_m), method = "color",
+                   tl.col= 'black', addCoef.col = 'red', number.cex = 0.7,, type= "upper")
+
+```
+Correlation heatmmap shows strong correlations among several variables (e.g. rad_m and per_m). Hence, this justifies the use of PCA to reduce dimensionality. 
+
+
+## Principal Component Analysis 
+
+
+
+
+```{r}
+pr_out<- prcomp(num_var)
+
+summary(pr_out)
+
+pr_out$rotation
+
+```
+Proportion of Variance: 
+- PC1 = 44.7% 
+- PC2 = 19.0%
+- PC3 = 9.4 %
+- PC4 = 6.6%
+- PC5 = 5.5 %
+- Cumulative Proportion: 84.7%
+
+Interpretation of the loadings: 
+
+
+1. PC1 
+- Strong negative loadings in radius_mean, perimeter_mean, area_mean, compactness_mean, concavity_mean, concave_points_mean,perimeter_se, area_se, radius_worst, area_worst, perimeter_worst, compactness_worst, concavity_worst, concave_points_worst. 
+- This component highly reflects on the overall tumour size and shape. 
+- Lower PC1 loadings indicate bigger and more irregular sized tumours. 
+
+
+2. PC2 
+- Strong positive loadings on radius_mean, perimeter_mean, area_mean,perimenter_worst, radius_worst, area_worst.
+- Strong negative loadigs on fractal_dimension_mean, fractal_dimension_se and fractal_dimension_worst. 
+- This principal component shows the contrast between tumour size and the tumour boundary complexity. 
+- High PC2 scores may indicate tumour with bigger size but less complex boundaries whereas low PC2 scores show tumours with smaller sizes but more complex tumour boundaries. 
+
+3. PC3 
+- Strong positive loadings on radius_se, texture_se, perimeter_se, area_se, smoothness_se,concave_points_se, concavity_se, fractal_dimension_se. 
+- Strong negative loadings on compactness_worst, smoothness_worst, symmetry_worst, and fractal_dimension_worst. 
+- PC3 highlights the contrast between the variability of the tumour's features and the overall worst-case of the tumour's properties. 
+-High PC3 scores reflect tumours with greater variability in size, texture, and shape features but less extreme worst-case abnormalities.
+
+
+4. PC4 
+- Strong negative loading on texture_mean, texture_se, and texture worst. 
+- Generally reflects on the overall texture of the tumour. 
+- High PC4 scores indicate coarse and irregular texture of the tumour. 
+
+5. PC5
+- Strong positive loading on smoothness_mean, symmetry_mean, smoothness_mean, smoothness_se, symmetry_se, smoothness_worst. Strong negative loading on compactness_se, concavity_se, fractal_dimensio_se. 
+- Component reflects a contrast between smoothness/symmetry and local irregularities in the tumour boundary.
+
+
+
+```{r}
+
+pr_var<- pr_out$sdev^2
+pve = pr_var/sum(pr_var)
+
+plot(pve, main= "Scree Plot for PCA", xlab ="Principal Components", ylim= c(0,1), ylab="Proportion of Variance Explained" , type= "b")
+```
+
+"Elbow" of Scree Plot shown at second principal component. A two principal component solution may also be sufficient. 
+
+In this project, we will be using a 5 principal component solution as it preserves more variance than a two principal component solution. 
+
+```{r}
+
+biplot(pr_out, scale = 0, cex= 0.5, main="Biplot")
+
+
+```
+
+```{r}
+pca_score = pr_out$x[,c(1:5)]
+
+```
+## Clustering using K-Means
+
+```{r}
+
+set.seed(123)
+km = kmeans(pca_score,centers=2,nstart=20)
+table(km$cluster)
+# Visualize
+
+fviz_cluster(km, pca_score)+
+  ggtitle("K-Means Clsutering for k=2")
+
+```
+
+```{r}
+
+library(aricode)   
+
+true_diag<-breast_cancer_clean$diagnosis
+km_diag<- km$cluster
+
+
+ari <- ARI(km_diag, true_diag)
+nmi <- NMI(km_diag, true_diag)
+
+cat("ARI:", ari, "\n")
+cat("NMI:", nmi, "\n")
+
+```
+
+
+```{r}
+#Create new dataframe for PCA scores 
+pc5 <- as.data.frame(pca_score)
+colnames(pc5)<- paste0("PC", 1:5)
+pc5$diagnosis <- breast_cancer_clean$diagnosis
+pc5$cluster <-  km_diag 
+
+
+#Write new csv files for orignal cleaned data and PCA-reduced dataset
+write.csv(breast_cancer_clean, "C:/Users/User/Downloads/breastCancer_clean.csv", row.names = F)
+write.csv(pc5, "C:/Users/User/Downloads/breastCancer_pc5.csv", row.names = F)
+
+```
